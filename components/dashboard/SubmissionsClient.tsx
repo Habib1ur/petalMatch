@@ -5,6 +5,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Download,
+  FileText,
   Search,
   Trash2,
   X,
@@ -53,6 +54,7 @@ export function SubmissionsClient({
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
   const [bulkConfirmOpen, setBulkConfirmOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [exportingPdf, setExportingPdf] = useState(false);
 
   const fetchSubmissions = useCallback(async () => {
     setLoading(true);
@@ -146,13 +148,66 @@ export function SubmissionsClient({
     }
   };
 
-  const exportUrl = () => {
+  const exportUrl = (format: "csv" | "json" = "csv") => {
     const params = new URLSearchParams();
     if (search.trim()) params.set("search", search.trim());
     if (linkId !== "all") params.set("linkId", linkId);
     if (from) params.set("from", from);
     if (to) params.set("to", to);
+    if (format === "json") params.set("format", "json");
     return `/api/admin/submissions/export?${params.toString()}`;
+  };
+
+  const handleExportPdf = async () => {
+    setExportingPdf(true);
+    try {
+      const res = await fetch(exportUrl("json"));
+      if (!res.ok) throw new Error();
+      const data = (await res.json()) as { submissions: SubmissionRow[] };
+
+      const [{ jsPDF }, { default: autoTable }] = await Promise.all([
+        import("jspdf"),
+        import("jspdf-autotable"),
+      ]);
+
+      const doc = new jsPDF({ orientation: "portrait", unit: "pt", format: "a4" });
+      doc.setFontSize(18);
+      doc.setTextColor(53, 40, 58);
+      doc.text("PetalMatch — Submissions Report", 40, 46);
+
+      doc.setFontSize(10);
+      doc.setTextColor(100, 116, 139);
+      doc.text(
+        `Generated ${new Date().toLocaleString()} · ${data.submissions.length} submissions`,
+        40,
+        64
+      );
+
+      autoTable(doc, {
+        startY: 82,
+        head: [["#", "Participant", "Crush", "Score", "Sharing Link", "Submitted At"]],
+        body: data.submissions.map((s, idx) => [
+          idx + 1,
+          s.participantName,
+          s.crushName,
+          `${s.compatibilityScore}%`,
+          `${s.shareLink.name} (/${s.shareLink.slug})`,
+          formatDateTime(s.createdAt),
+        ]),
+        styles: { fontSize: 9, cellPadding: 6 },
+        headStyles: { fillColor: [139, 92, 246], textColor: 255 },
+        alternateRowStyles: { fillColor: [250, 245, 255] },
+      });
+
+      doc.save(
+        `petalmatch-submissions-${new Date().toISOString().slice(0, 10)}.pdf`
+      );
+      toast("PDF report downloaded!", "success");
+    } catch {
+      toast("Failed to export PDF", "error");
+    } finally {
+      setExportingPdf(false);
+    }
   };
 
   return (
@@ -177,12 +232,21 @@ export function SubmissionsClient({
             </button>
           )}
           <a
-            href={exportUrl()}
+            href={exportUrl("csv")}
             className="inline-flex items-center gap-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 py-2 text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
           >
             <Download className="h-4 w-4 text-violet-500" />
             <span>Export CSV</span>
           </a>
+          <button
+            type="button"
+            onClick={handleExportPdf}
+            disabled={exportingPdf}
+            className="inline-flex items-center gap-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 py-2 text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors disabled:opacity-60"
+          >
+            <FileText className="h-4 w-4 text-pink-500" />
+            <span>{exportingPdf ? "Exporting..." : "Export PDF"}</span>
+          </button>
         </div>
       </div>
 

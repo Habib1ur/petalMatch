@@ -59,6 +59,11 @@ export async function GET(request: Request) {
     },
   });
 
+  const format = url.searchParams.get("format") || "csv";
+  if (format === "json") {
+    return Response.json({ submissions });
+  }
+
   const headers = [
     "Submission ID",
     "Participant Name",
