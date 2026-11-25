@@ -12,7 +12,16 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { Crown, Eye, HeartHandshake, Percent, Sparkles } from "lucide-react";
+import {
+  Clock,
+  Crown,
+  Eye,
+  HeartHandshake,
+  Percent,
+  Sparkles,
+  Trophy,
+  Users,
+} from "lucide-react";
 import { useToast } from "@/components/ui/ToastProvider";
 
 interface LinkOption {
@@ -28,6 +37,10 @@ interface AnalyticsPayload {
     activeLinksCount: number;
     totalVisits: number;
     avgCompatibility: number;
+    highestScore: number;
+    lowestScore: number;
+    uniqueCrushCount: number;
+    uniqueParticipantCount: number;
     conversionRate: number;
     topCrushName: string;
     topCrushCount: number;
@@ -38,6 +51,14 @@ interface AnalyticsPayload {
     count: number;
     avgScore: number;
   }>;
+  participantLeaderboard: Array<{
+    normalizedName: string;
+    displayName: string;
+    count: number;
+    avgScore: number;
+  }>;
+  scoreDistribution: Array<{ range: string; count: number }>;
+  hourlyActivity: Array<{ hour: string; submissions: number }>;
   mostActiveLinks: Array<{
     id: string;
     name: string;
@@ -193,6 +214,155 @@ export function AnalyticsClient({
             {data.overview.avgCompatibility}%
           </p>
         </div>
+      </div>
+
+      {/* Extra Summary Metrics */}
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+        <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#111827] p-4">
+          <div className="flex items-center justify-between text-xs uppercase text-slate-400">
+            <span>Highest Score</span>
+            <Trophy className="h-4 w-4 text-amber-500" />
+          </div>
+          <p className="mt-2 text-2xl font-bold text-amber-500">
+            {data.overview.highestScore}%
+          </p>
+        </div>
+        <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#111827] p-4">
+          <div className="flex items-center justify-between text-xs uppercase text-slate-400">
+            <span>Lowest Score</span>
+            <Sparkles className="h-4 w-4 text-slate-400" />
+          </div>
+          <p className="mt-2 text-2xl font-bold">
+            {data.overview.lowestScore}%
+          </p>
+        </div>
+        <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#111827] p-4">
+          <div className="flex items-center justify-between text-xs uppercase text-slate-400">
+            <span>Unique Participants</span>
+            <Users className="h-4 w-4 text-violet-500" />
+          </div>
+          <p className="mt-2 text-2xl font-bold">
+            {data.overview.uniqueParticipantCount.toLocaleString()}
+          </p>
+        </div>
+        <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#111827] p-4">
+          <div className="flex items-center justify-between text-xs uppercase text-slate-400">
+            <span>Unique Crush Names</span>
+            <Crown className="h-4 w-4 text-pink-500" />
+          </div>
+          <p className="mt-2 text-2xl font-bold">
+            {data.overview.uniqueCrushCount.toLocaleString()}
+          </p>
+        </div>
+      </div>
+
+      {/* Score Distribution & Peak Hours */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#111827] p-5 shadow-sm">
+          <h2 className="mb-4 text-base font-semibold">
+            Compatibility Score Distribution
+          </h2>
+          <div className="h-64 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={data.scoreDistribution}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.2} />
+                <XAxis dataKey="range" tick={{ fontSize: 12 }} stroke="#94A3B8" />
+                <YAxis allowDecimals={false} tick={{ fontSize: 12 }} stroke="#94A3B8" />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: "#0F172A",
+                    borderColor: "#334155",
+                    borderRadius: "12px",
+                    color: "#F8FAFC",
+                  }}
+                />
+                <Bar
+                  dataKey="count"
+                  name="Submissions"
+                  fill="#EC4899"
+                  radius={[6, 6, 0, 0]}
+                />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#111827] p-5 shadow-sm">
+          <div className="mb-4 flex items-center gap-2">
+            <Clock className="h-4 w-4 text-violet-500" />
+            <h2 className="text-base font-semibold">
+              Activity by Hour of Day
+            </h2>
+          </div>
+          <div className="h-64 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={data.hourlyActivity}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.2} />
+                <XAxis
+                  dataKey="hour"
+                  tick={{ fontSize: 10 }}
+                  interval={2}
+                  stroke="#94A3B8"
+                />
+                <YAxis allowDecimals={false} tick={{ fontSize: 12 }} stroke="#94A3B8" />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: "#0F172A",
+                    borderColor: "#334155",
+                    borderRadius: "12px",
+                    color: "#F8FAFC",
+                  }}
+                />
+                <Bar
+                  dataKey="submissions"
+                  name="Submissions"
+                  fill="#8B5CF6"
+                  radius={[4, 4, 0, 0]}
+                />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      </div>
+
+      {/* Top Participant Names */}
+      <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#111827] p-5 shadow-sm">
+        <div className="mb-4 flex items-center gap-2">
+          <Users className="h-4 w-4 text-violet-500" />
+          <h2 className="text-base font-semibold">
+            Most Active Participants
+          </h2>
+        </div>
+
+        {data.participantLeaderboard.length === 0 ? (
+          <div className="rounded-xl border border-dashed border-slate-200 dark:border-slate-800 py-8 text-center text-sm text-slate-500">
+            No participant activity recorded yet.
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
+            {data.participantLeaderboard.map((item, idx) => (
+              <div
+                key={item.normalizedName}
+                className="flex items-center justify-between rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/60 px-3.5 py-2.5"
+              >
+                <div className="flex items-center gap-3 min-w-0">
+                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-violet-500/15 text-xs font-bold text-violet-500">
+                    {idx + 1}
+                  </span>
+                  <span className="truncate text-sm font-medium">
+                    {item.displayName}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2 shrink-0 text-xs">
+                  <span className="text-slate-400">Avg {item.avgScore}%</span>
+                  <span className="rounded-full bg-violet-500/15 px-2.5 py-0.5 font-semibold text-violet-500">
+                    {item.count}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Submission & Visit Chart */}

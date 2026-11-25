@@ -62,11 +62,34 @@ const CALC_MESSAGES = [
   "Almost there...",
 ];
 
+const CALC_MILESTONES = ["Signals", "Magic", "Chemistry", "Bloom"];
+
+const BURST_PETALS = Array.from({ length: 10 }, (_, idx) => {
+  const angle = (idx / 10) * Math.PI * 2;
+  return {
+    id: idx,
+    x: Math.round(Math.cos(angle) * 120),
+    y: Math.round(Math.sin(angle) * 120),
+    rotate: idx * 36,
+    color: idx % 3 === 0 ? "#F5A6C8" : idx % 3 === 1 ? "#C5B5F5" : "#FFD7C2",
+  };
+});
+
+function getPlayfulBreakdown(score: number, a: string, b: string) {
+  const seed = a.length * 7 + b.length * 13;
+  const clamp = (n: number) => Math.max(18, Math.min(99, n));
+  return [
+    { label: "Chemistry", value: clamp(score + ((seed % 9) - 4)) },
+    { label: "Vibe Match", value: clamp(score + (((seed * 3) % 11) - 5)) },
+    { label: "Spark", value: clamp(score + (((seed * 5) % 13) - 6)) },
+    { label: "Destiny", value: clamp(score + (((seed * 7) % 9) - 3)) },
+  ];
+}
+
 export function CompatibilityExperience({
   slug,
   customHeading,
   welcomeMessage,
-  isDemo = false,
 }: CompatibilityExperienceProps) {
   const { toast } = useToast();
   const [step, setStep] = useState<ViewStep>("landing");
@@ -444,12 +467,6 @@ export function CompatibilityExperience({
                     </>
                   )}
                 </motion.button>
-
-                <p className="pt-1 text-center text-xs text-[#8D7D8D]">
-                  {isDemo
-                    ? "Preview mode: submissions on this default link are saved to the administrator's welcome link."
-                    : "Note: Submitted names are privately shared only with the link creator."}
-                </p>
               </form>
             </motion.section>
           )}
@@ -463,24 +480,34 @@ export function CompatibilityExperience({
               transition={{ duration: 0.45 }}
               className="w-full text-center"
             >
-              {/* Stage 1 & 2: Opposite names + glowing blooming flower */}
+              {/* Stage 1 & 2: Opposite names + glowing blooming flower + orbiting sparkles */}
               <div className="mb-8 flex items-center justify-center gap-3 sm:gap-6">
                 <motion.span
-                  initial={{ opacity: 0, x: -24 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.5 }}
-                  className="max-w-[34%] truncate font-serif text-xl sm:text-2xl font-semibold text-[#35283A]"
+                  initial={{ opacity: 0, x: -34, scale: 0.92 }}
+                  animate={{ opacity: 1, x: 0, scale: 1 }}
+                  transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
+                  className="max-w-[34%] truncate rounded-full border border-white/70 bg-white/60 px-4 py-1.5 font-serif text-lg sm:text-2xl font-semibold text-[#35283A] shadow-sm backdrop-blur-md"
                 >
                   {result?.participantName || watchedParticipant}
                 </motion.span>
 
-                <BloomingFlower phase="blooming" size={116} />
+                <div className="relative flex items-center justify-center">
+                  <motion.div
+                    className="absolute h-32 w-32 rounded-full border border-dashed border-[#D979A7]/35"
+                    animate={{ rotate: 360, scale: [0.96, 1.06, 0.96] }}
+                    transition={{
+                      rotate: { duration: 8, repeat: Infinity, ease: "linear" },
+                      scale: { duration: 2.2, repeat: Infinity, ease: "easeInOut" },
+                    }}
+                  />
+                  <BloomingFlower phase="blooming" size={116} />
+                </div>
 
                 <motion.span
-                  initial={{ opacity: 0, x: 24 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.5 }}
-                  className="max-w-[34%] truncate font-serif text-xl sm:text-2xl font-semibold text-[#35283A]"
+                  initial={{ opacity: 0, x: 34, scale: 0.92 }}
+                  animate={{ opacity: 1, x: 0, scale: 1 }}
+                  transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
+                  className="max-w-[34%] truncate rounded-full border border-white/70 bg-white/60 px-4 py-1.5 font-serif text-lg sm:text-2xl font-semibold text-[#35283A] shadow-sm backdrop-blur-md"
                 >
                   {result?.crushName || watchedCrush}
                 </motion.span>
@@ -489,9 +516,9 @@ export function CompatibilityExperience({
               <AnimatePresence mode="wait">
                 <motion.p
                   key={calcMsgIndex}
-                  initial={{ opacity: 0, y: 8 }}
+                  initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -8 }}
+                  exit={{ opacity: 0, y: -10 }}
                   transition={{ duration: 0.3 }}
                   className="font-serif text-xl sm:text-2xl text-[#35283A] mb-6"
                 >
@@ -499,13 +526,33 @@ export function CompatibilityExperience({
                 </motion.p>
               </AnimatePresence>
 
-              <div className="mx-auto h-2 w-64 max-w-full overflow-hidden rounded-full bg-white/70 p-0.5 shadow-inner">
+              <div className="mx-auto h-2.5 w-72 max-w-full overflow-hidden rounded-full bg-white/75 p-0.5 shadow-inner">
                 <motion.div
                   className="h-full rounded-full bg-gradient-to-r from-[#F5A6C8] via-[#D979A7] to-[#C5B5F5]"
                   initial={{ width: "10%" }}
                   animate={{ width: `${calcProgress}%` }}
                   transition={{ duration: 0.65, ease: "easeOut" }}
                 />
+              </div>
+
+              <div className="mx-auto mt-4 flex w-72 max-w-full items-center justify-between text-[11px] font-medium">
+                {CALC_MILESTONES.map((label, idx) => {
+                  const active = idx <= calcMsgIndex;
+                  return (
+                    <motion.span
+                      key={label}
+                      animate={{
+                        opacity: active ? 1 : 0.45,
+                        scale: idx === calcMsgIndex ? 1.06 : 1,
+                      }}
+                      className={
+                        active ? "text-[#D979A7] font-semibold" : "text-[#8D7D8D]"
+                      }
+                    >
+                      {label}
+                    </motion.span>
+                  );
+                })}
               </div>
             </motion.section>
           )}
@@ -527,12 +574,35 @@ export function CompatibilityExperience({
 
               <h2 className="font-serif text-2xl sm:text-3xl font-semibold tracking-wide text-[#35283A] mb-6 break-words">
                 {result.participantName.toUpperCase()}{" "}
-                <span className="mx-1.5 text-[#D979A7]">♡</span>{" "}
+                <motion.span
+                  className="mx-1.5 inline-block text-[#D979A7]"
+                  animate={{ scale: [1, 1.24, 1] }}
+                  transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
+                >
+                  ♡
+                </motion.span>{" "}
                 {result.crushName.toUpperCase()}
               </h2>
 
-              {/* Circular Floral Progress Indicator */}
+              {/* Circular Floral Progress Indicator + Petal Burst */}
               <div className="relative mx-auto mb-6 flex h-44 w-44 items-center justify-center">
+                {BURST_PETALS.map((petal) => (
+                  <motion.span
+                    key={petal.id}
+                    initial={{ x: 0, y: 0, scale: 0.3, opacity: 0.95 }}
+                    animate={{
+                      x: petal.x,
+                      y: petal.y,
+                      scale: [0.4, 1.1, 0],
+                      opacity: [0.95, 0.8, 0],
+                      rotate: petal.rotate,
+                    }}
+                    transition={{ duration: 1.25, ease: "easeOut" }}
+                    className="pointer-events-none absolute h-3 w-2 rounded-full"
+                    style={{ backgroundColor: petal.color }}
+                  />
+                ))}
+
                 <div className="absolute inset-0 flex items-center justify-center opacity-25 pointer-events-none">
                   <BloomingFlower phase="open" size={172} />
                 </div>
@@ -586,9 +656,44 @@ export function CompatibilityExperience({
               <p className="font-serif text-xl sm:text-2xl font-medium text-[#35283A] mb-2">
                 {result.tier.message}
               </p>
-              <p className="mx-auto max-w-md text-sm text-[#8D7D8D] mb-8">
+              <p className="mx-auto max-w-md text-sm text-[#8D7D8D] mb-6">
                 {result.tier.subtitle}
               </p>
+
+              {/* Animated Playful Sub-Metrics */}
+              <div className="mx-auto mb-7 grid max-w-md grid-cols-2 gap-3 text-left">
+                {getPlayfulBreakdown(
+                  result.compatibilityScore,
+                  result.participantName,
+                  result.crushName
+                ).map((metric, idx) => (
+                  <div
+                    key={metric.label}
+                    className="rounded-2xl border border-[#F5A6C8]/35 bg-[#FFF7FA]/85 p-3"
+                  >
+                    <div className="mb-1.5 flex items-center justify-between text-xs">
+                      <span className="font-medium text-[#8D7D8D]">
+                        {metric.label}
+                      </span>
+                      <span className="font-semibold text-[#35283A]">
+                        {metric.value}%
+                      </span>
+                    </div>
+                    <div className="h-1.5 w-full overflow-hidden rounded-full bg-[#FCEBF2]">
+                      <motion.div
+                        className="h-full rounded-full bg-gradient-to-r from-[#F5A6C8] to-[#C5B5F5]"
+                        initial={{ width: 0 }}
+                        animate={{ width: `${metric.value}%` }}
+                        transition={{
+                          duration: 0.9,
+                          delay: 0.25 + idx * 0.1,
+                          ease: [0.22, 1, 0.36, 1],
+                        }}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
 
               {/* Result Action Controls */}
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">

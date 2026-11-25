@@ -61,6 +61,9 @@ export async function getAdminAnalytics(filters: AnalyticsFilters) {
     totalVisits,
     scoreAgg,
     topCrushGroups,
+    topParticipantGroups,
+    uniqueCrushGroups,
+    uniqueParticipantGroups,
     links,
     submissionsForSeries,
     visitsForSeries,
@@ -84,6 +87,8 @@ export async function getAdminAnalytics(filters: AnalyticsFilters) {
     prisma.submission.aggregate({
       where: submissionWhere,
       _avg: { compatibilityScore: true },
+      _max: { compatibilityScore: true },
+      _min: { compatibilityScore: true },
     }),
     prisma.submission.groupBy({
       by: ["normalizedCrushName"],
@@ -92,6 +97,22 @@ export async function getAdminAnalytics(filters: AnalyticsFilters) {
       _avg: { compatibilityScore: true },
       orderBy: { _count: { normalizedCrushName: "desc" } },
       take: 25,
+    }),
+    prisma.submission.groupBy({
+      by: ["normalizedParticipantName"],
+      where: submissionWhere,
+      _count: { normalizedParticipantName: true },
+      _avg: { compatibilityScore: true },
+      orderBy: { _count: { normalizedParticipantName: "desc" } },
+      take: 15,
+    }),
+    prisma.submission.groupBy({
+      by: ["normalizedCrushName"],
+      where: submissionWhere,
+    }),
+    prisma.submission.groupBy({
+      by: ["normalizedParticipantName"],
+      where: submissionWhere,
     }),
     prisma.shareLink.findMany({
       where: {
@@ -138,7 +159,42 @@ export async function getAdminAnalytics(filters: AnalyticsFilters) {
       : 0,
   }));
 
+  const participantLeaderboard = topParticipantGroups.map((group) => ({
+    normalizedName: group.normalizedParticipantName,
+    displayName: toTitleCase(group.normalizedParticipantName),
+    count: group._count.normalizedParticipantName,
+    avgScore: group._avg.compatibilityScore
+      ? Math.round(group._avg.compatibilityScore)
+      : 0,
+  }));
+
   const topCrush = crushLeaderboard[0] ?? null;
+
+  // Score distribution buckets & hourly activity
+  const scoreBuckets = [
+    { range: "0–29%", count: 0 },
+    { range: "30–49%", count: 0 },
+    { range: "50–69%", count: 0 },
+    { range: "70–89%", count: 0 },
+    { range: "90–100%", count: 0 },
+  ];
+
+  const hourlyActivity = Array.from({ length: 24 }, (_, h) => ({
+    hour: `${String(h).padStart(2, "0")}:00`,
+    submissions: 0,
+  }));
+
+  for (const s of submissionsForSeries) {
+    const score = s.compatibilityScore;
+    if (score >= 90) scoreBuckets[4].count += 1;
+    else if (score >= 70) scoreBuckets[3].count += 1;
+    else if (score >= 50) scoreBuckets[2].count += 1;
+    else if (score >= 30) scoreBuckets[1].count += 1;
+    else scoreBuckets[0].count += 1;
+
+    const hour = s.createdAt.getHours();
+    hourlyActivity[hour].submissions += 1;
+  }
 
   // Build daily, weekly, monthly series
   const dailyMap = new Map<string, { label: string; submissions: number; visits: number }>();
@@ -208,11 +264,18 @@ export async function getAdminAnalytics(filters: AnalyticsFilters) {
       activeLinksCount,
       totalVisits,
       avgCompatibility,
+      highestScore: scoreAgg._max.compatibilityScore ?? 0,
+      lowestScore: scoreAgg._min.compatibilityScore ?? 0,
+      uniqueCrushCount: uniqueCrushGroups.length,
+      uniqueParticipantCount: uniqueParticipantGroups.length,
       conversionRate,
       topCrushName: topCrush ? topCrush.displayName : "—",
       topCrushCount: topCrush ? topCrush.count : 0,
     },
     crushLeaderboard,
+    participantLeaderboard,
+    scoreDistribution: scoreBuckets,
+    hourlyActivity,
     mostActiveLinks,
     series: {
       daily: sortSeries(dailyMap),
