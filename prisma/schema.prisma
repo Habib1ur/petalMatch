@@ -1,0 +1,87 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Admin {
+  id            String      @id @default(cuid())
+  email         String      @unique
+  passwordHash  String
+  name          String      @default("Administrator")
+  retentionDays Int?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  sessions      Session[]
+  shareLinks    ShareLink[]
+}
+
+model Session {
+  id         String   @id @default(cuid())
+  adminId    String
+  admin      Admin    @relation(fields: [adminId], references: [id], onDelete: Cascade)
+  tokenHash  String   @unique
+  rememberMe Boolean  @default(true)
+  userAgent  String?
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  lastUsedAt DateTime @default(now())
+
+  @@index([adminId])
+  @@index([expiresAt])
+}
+
+model ShareLink {
+  id             String       @id @default(cuid())
+  adminId        String
+  admin          Admin        @relation(fields: [adminId], references: [id], onDelete: Cascade)
+  slug           String       @unique
+  name           String
+  description    String?
+  customHeading  String?
+  welcomeMessage String?
+  isActive       Boolean      @default(true)
+  expiresAt      DateTime?
+  maxSubmissions Int?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  submissions    Submission[]
+  visits         LinkVisit[]
+
+  @@index([adminId])
+  @@index([isActive])
+  @@index([createdAt])
+}
+
+model Submission {
+  id                        String    @id @default(cuid())
+  shareLinkId               String
+  shareLink                 ShareLink @relation(fields: [shareLinkId], references: [id], onDelete: Cascade)
+  participantName           String
+  crushName                 String
+  normalizedParticipantName String
+  normalizedCrushName       String
+  compatibilityScore        Int
+  createdAt                 DateTime  @default(now())
+
+  @@index([shareLinkId])
+  @@index([normalizedCrushName])
+  @@index([normalizedParticipantName])
+  @@index([createdAt])
+  @@index([compatibilityScore])
+}
+
+model LinkVisit {
+  id                String    @id @default(cuid())
+  shareLinkId       String
+  shareLink         ShareLink @relation(fields: [shareLinkId], references: [id], onDelete: Cascade)
+  visitorIdentifier String
+  visitedAt         DateTime  @default(now())
+
+  @@index([shareLinkId])
+  @@index([visitedAt])
+  @@index([shareLinkId, visitorIdentifier])
+}
