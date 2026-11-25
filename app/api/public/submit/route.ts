@@ -39,6 +39,69 @@ export async function POST(request: Request) {
     const { slug } = parsed.data;
     const participantName = cleanDisplayName(parsed.data.participantName);
     const crushName = cleanDisplayName(parsed.data.crushName);
+    const normalizedParticipantName = normalizeName(participantName);
+    const normalizedCrushName = normalizeName(crushName);
+    const compatibilityScore = calculateCompatibilityScore(
+      participantName,
+      crushName
+    );
+    const tier = getCompatibilityTier(compatibilityScore);
+
+    // Root website ("/") broadcasts the submission to every admin's dashboard
+    if (slug === "__root__") {
+      const admins = await prisma.admin.findMany({
+        select: {
+          id: true,
+          shareLinks: {
+            where: { slug: { startsWith: "root-" } },
+            select: { id: true },
+            take: 1,
+          },
+        },
+      });
+
+      if (admins.length > 0) {
+        await prisma.$transaction(async (tx) => {
+          for (const admin of admins) {
+            let targetLinkId = admin.shareLinks[0]?.id;
+            if (!targetLinkId) {
+              const rootSlug = `root-${admin.id.slice(-8).toLowerCase()}`;
+              const createdLink = await tx.shareLink.upsert({
+                where: { slug: rootSlug },
+                update: {},
+                create: {
+                  adminId: admin.id,
+                  slug: rootSlug,
+                  name: "Root Website (/)",
+                  description: "Submissions from the main home page",
+                  isActive: true,
+                },
+                select: { id: true },
+              });
+              targetLinkId = createdLink.id;
+            }
+
+            await tx.submission.create({
+              data: {
+                shareLinkId: targetLinkId,
+                participantName,
+                crushName,
+                normalizedParticipantName,
+                normalizedCrushName,
+                compatibilityScore,
+              },
+            });
+          }
+        });
+      }
+
+      return NextResponse.json({
+        participantName,
+        crushName,
+        compatibilityScore,
+        tier,
+      });
+    }
 
     const shareLink = await prisma.shareLink.findUnique({
       where: { slug },
@@ -80,19 +143,13 @@ export async function POST(request: Request) {
       );
     }
 
-    const compatibilityScore = calculateCompatibilityScore(
-      participantName,
-      crushName
-    );
-    const tier = getCompatibilityTier(compatibilityScore);
-
     await prisma.submission.create({
       data: {
         shareLinkId: shareLink.id,
         participantName,
         crushName,
-        normalizedParticipantName: normalizeName(participantName),
-        normalizedCrushName: normalizeName(crushName),
+        normalizedParticipantName,
+        normalizedCrushName,
         compatibilityScore,
       },
     });
