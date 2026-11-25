@@ -46,6 +46,28 @@ export const loginSchema = z.object({
   rememberMe: z.boolean().default(true),
 });
 
+export const registerSchema = z.object({
+  name: z
+    .string()
+    .transform(sanitizeTextInput)
+    .pipe(
+      z
+        .string()
+        .min(1, "Name is required")
+        .max(60, "Name must be 60 characters or fewer")
+    ),
+  email: z
+    .string()
+    .trim()
+    .toLowerCase()
+    .email("Please enter a valid email address"),
+  password: z
+    .string()
+    .min(8, "Password must be at least 8 characters")
+    .max(128, "Password too long"),
+  rememberMe: z.boolean().default(true),
+});
+
 export const shareLinkSchema = z.object({
   name: z
     .string()

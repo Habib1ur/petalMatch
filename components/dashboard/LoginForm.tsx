@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -138,6 +139,16 @@ export function LoginForm({ nextPath = "/dashboard" }: { nextPath?: string }) {
         >
           {isSubmitting ? "Signing in..." : "Sign in to Dashboard"}
         </button>
+
+        <p className="pt-2 text-center text-xs text-slate-400">
+          Want your own private dashboard?{" "}
+          <Link
+            href="/register"
+            className="font-medium text-violet-400 hover:text-violet-300"
+          >
+            Create an admin account
+          </Link>
+        </p>
       </form>
     </div>
   );
