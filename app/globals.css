@@ -96,11 +96,57 @@ body {
   animation-delay: var(--glow-delay, 0s);
 }
 
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.animate-shimmer {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(139, 92, 246, 0.06) 50%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.8s ease-in-out infinite;
+}
+
+:is(.dark) .animate-shimmer {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(139, 92, 246, 0.12) 50%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+}
+
+@keyframes fadeSlideUp {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 12px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+.animate-fade-slide-up {
+  animation: fadeSlideUp 0.4s ease-out both;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .animate-petal-fall,
   .animate-gentle-float,
   .animate-slow-spin,
-  .animate-particle-glow {
+  .animate-particle-glow,
+  .animate-fade-slide-up {
     animation: none !important;
   }
 }

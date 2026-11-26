@@ -79,7 +79,7 @@ export default async function DashboardOverviewPage() {
 
   return (
     <div className="space-y-8">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between animate-fade-slide-up">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Overview</h1>
           <p className="text-sm text-slate-500 dark:text-slate-400">
@@ -97,12 +97,13 @@ export default async function DashboardOverviewPage() {
 
       {/* 6 KPI Cards */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-        {kpis.map((kpi) => {
+        {kpis.map((kpi, kpiIdx) => {
           const Icon = kpi.icon;
           return (
             <div
               key={kpi.label}
-              className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#111827] p-5 shadow-sm"
+              className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#111827] p-5 shadow-sm animate-fade-slide-up"
+              style={{ animationDelay: `${kpiIdx * 60}ms` }}
             >
               <div className="flex items-center justify-between">
                 <span className="text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400">
@@ -129,7 +130,7 @@ export default async function DashboardOverviewPage() {
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         {/* Recent Submissions */}
-        <div className="lg:col-span-2 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#111827] p-5 shadow-sm">
+        <div className="lg:col-span-2 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#111827] p-5 shadow-sm animate-fade-slide-up" style={{ animationDelay: "400ms" }}>
           <div className="mb-4 flex items-center justify-between">
             <h2 className="text-base font-semibold">Recent Submissions</h2>
             <Link
@@ -183,7 +184,7 @@ export default async function DashboardOverviewPage() {
         </div>
 
         {/* Top Crush Leaderboard */}
-        <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#111827] p-5 shadow-sm">
+        <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#111827] p-5 shadow-sm animate-fade-slide-up" style={{ animationDelay: "480ms" }}>
           <div className="mb-4 flex items-center justify-between">
             <h2 className="text-base font-semibold">Top Crush Names</h2>
             <Link

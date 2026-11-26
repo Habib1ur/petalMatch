@@ -18,6 +18,7 @@ import {
 import { BloomingFlower } from "@/components/flowers/BloomingFlower";
 import { FlowerIcon } from "@/components/flowers/FlowerIcon";
 import { PetalBackdrop } from "@/components/flowers/PetalBackdrop";
+import { Confetti } from "@/components/result/Confetti";
 import { generateResultPngBlob } from "@/components/result/result-card-canvas";
 import { useToast } from "@/components/ui/ToastProvider";
 
@@ -100,6 +101,7 @@ export function CompatibilityExperience({
   const [copied, setCopied] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [showConfetti, setShowConfetti] = useState(false);
   const timersRef = useRef<number[]>([]);
 
   const clearAllTimers = useCallback(() => {
@@ -168,6 +170,13 @@ export function CompatibilityExperience({
     const duration = 1200;
     const start = performance.now();
     let frameId = 0;
+
+    // Fire confetti for high scores (85%+)
+    if (target >= 85) {
+      setShowConfetti(true);
+      const confettiTimer = window.setTimeout(() => setShowConfetti(false), 2500);
+      timersRef.current.push(confettiTimer);
+    }
 
     const tick = (now: number) => {
       const elapsed = now - start;
@@ -279,6 +288,7 @@ export function CompatibilityExperience({
     reset();
     setResult(null);
     setSubmitError(null);
+    setShowConfetti(false);
     setStep("form");
   };
 
@@ -287,6 +297,7 @@ export function CompatibilityExperience({
     reset();
     setResult(null);
     setSubmitError(null);
+    setShowConfetti(false);
     setStep("landing");
   };
 
@@ -302,6 +313,7 @@ export function CompatibilityExperience({
           step === "calculating" || step === "result" ? "celebrate" : "calm"
         }
       />
+      <Confetti active={showConfetti} />
 
       {/* Minimal Top Brand Bar */}
       <header className="relative z-10 flex items-center justify-center pt-1">
@@ -335,24 +347,35 @@ export function CompatibilityExperience({
                 </div>
               </div>
 
-              <p className="font-display text-xs sm:text-sm font-medium tracking-[0.18em] uppercase text-[#D979A7] mb-3">
+              <motion.p
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.15, duration: 0.5 }}
+                className="font-display text-xs sm:text-sm font-medium tracking-[0.18em] uppercase text-[#D979A7] mb-3"
+              >
                 Where names meet a little magic.
-              </p>
+              </motion.p>
 
-              <h1
+              <motion.h1
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3, duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
                 className="font-serif font-semibold tracking-tight text-[#35283A] leading-[1.12] mb-5"
                 style={{ fontSize: "clamp(2.25rem, 6vw, 4.15rem)" }}
               >
-                {customHeading || "Let's see what the stars say about you two."}
-              </h1>
+                {customHeading || "Let\u2019s see what the stars say about you two."}
+              </motion.h1>
 
-              <p
+              <motion.p
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.45, duration: 0.5 }}
                 className="mx-auto max-w-md text-[#8D7D8D] leading-relaxed mb-9"
                 style={{ fontSize: "clamp(0.95rem, 1.2vw, 1.08rem)" }}
               >
                 {welcomeMessage ||
                   "Two names. One little experiment. A surprising result."}
-              </p>
+              </motion.p>
 
               <motion.button
                 type="button"
@@ -567,9 +590,14 @@ export function CompatibilityExperience({
               className="w-full rounded-[24px] border border-white/80 bg-white/82 p-6 sm:p-10 text-center shadow-[0_24px_70px_rgba(53,40,58,0.10)] backdrop-blur-xl"
             >
               <div className="mb-3 flex justify-center">
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-[#FCEBF2] px-3 py-1 text-[11px] font-medium uppercase tracking-[0.14em] text-[#D979A7]">
-                  Just for fun
-                </span>
+                <motion.span
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 0.1, duration: 0.3 }}
+                  className="inline-flex items-center gap-1.5 rounded-full bg-[#FCEBF2] px-3 py-1 text-[11px] font-medium uppercase tracking-[0.14em] text-[#D979A7]"
+                >
+                  {result.compatibilityScore >= 85 ? "Perfect match!" : "Just for fun"}
+                </motion.span>
               </div>
 
               <h2 className="font-serif text-2xl sm:text-3xl font-semibold tracking-wide text-[#35283A] mb-6 break-words">
@@ -653,12 +681,22 @@ export function CompatibilityExperience({
                 </div>
               </div>
 
-              <p className="font-serif text-xl sm:text-2xl font-medium text-[#35283A] mb-2">
+              <motion.p
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3, duration: 0.4 }}
+                className="font-serif text-xl sm:text-2xl font-medium text-[#35283A] mb-2"
+              >
                 {result.tier.message}
-              </p>
-              <p className="mx-auto max-w-md text-sm text-[#8D7D8D] mb-6">
+              </motion.p>
+              <motion.p
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.5, duration: 0.4 }}
+                className="mx-auto max-w-md text-sm text-[#8D7D8D] mb-6"
+              >
                 {result.tier.subtitle}
-              </p>
+              </motion.p>
 
               {/* Animated Playful Sub-Metrics */}
               <div className="mx-auto mb-7 grid max-w-md grid-cols-2 gap-3 text-left">
@@ -761,9 +799,12 @@ export function CompatibilityExperience({
         </AnimatePresence>
       </main>
 
-      {/* Subtle Footer */}
-      <footer className="relative z-10 pb-1 text-center text-xs text-[#8D7D8D]/85">
-        <span>PetalMatch · Crafted for fun</span>
+      {/* Footer */}
+      <footer className="relative z-10 pb-2 text-center">
+        <span className="inline-flex items-center gap-1.5 rounded-full border border-white/40 bg-white/35 px-3.5 py-1 text-[11px] font-medium tracking-wide text-[#8D7D8D] backdrop-blur-sm">
+          <FlowerIcon className="h-3 w-3 text-[#D979A7]/70" animate={false} />
+          PetalMatch · Just for fun, never serious
+        </span>
       </footer>
     </div>
   );
